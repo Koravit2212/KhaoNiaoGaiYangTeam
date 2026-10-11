@@ -27,6 +27,15 @@ app.post('/api/login',h(async(req,res)=>{
  res.json({token:jwt.sign({id:a.account_id,role:a.role,eid:e&&e.employee_id,name},S,{expiresIn:'8h'}),role:a.role,name})}));
 
 app.get('/api/lookups',auth(),h(async(_,res)=>res.json({departments:await q('SELECT department_id,department_name FROM departments ORDER BY 2'),positions:await q('SELECT position_id,position_name FROM positions ORDER BY 2')})));
+app.post('/api/change-password',auth(),h(async(req,res)=>{
+ const cur=String(req.body.current_password||''),nw=String(req.body.new_password||'');
+ if(!cur||!nw)return res.status(400).json({error:'กรุณากรอกข้อมูลให้ครบ'});
+ if(nw.length<8||Buffer.byteLength(nw)>72)return res.status(400).json({error:'รหัสผ่านใหม่ต้องมีความยาว 8-72 ตัวอักษร'});
+ if(nw===cur)return res.status(400).json({error:'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม'});
+ const[a]=await q('SELECT account_id,password FROM accounts WHERE account_id=:i',{i:req.u.id});
+ if(!a)return res.status(401).json({error:'กรุณาเข้าสู่ระบบใหม่'});
+ if(!await bcrypt.compare(cur,a.password))return res.status(400).json({error:'รหัสผ่านปัจจุบันไม่ถูกต้อง'});
+ await run('UPDATE accounts SET password=:p WHERE account_id=:i',{p:await bcrypt.hash(nw,10),i:a.account_id});res.json({ok:1})}));
 app.get('/api/me',auth(),h(async(req,res)=>res.json((await q(EMP+' WHERE e.employee_id=:i',{i:req.u.eid||0}))[0]||null)));
 
 app.get('/api/employees',auth(...HR),h(async(req,res)=>res.json(await q(EMP+" WHERE TO_CHAR(e.employee_id)||e.first_name||' '||e.last_name||d.department_name||p.position_name LIKE :s ORDER BY e.employee_id",{s:'%'+(req.query.q||'')+'%'}))));

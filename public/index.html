@@ -41,7 +41,7 @@ dialog{border:0;border-radius:14px;padding:22px;width:min(520px,95vw)}.sum p{dis
 <label>รหัสผ่าน<input id="p" type="password" autocomplete="current-password" placeholder="รหัสผ่าน" required></label>
 <label class="chk" style="margin-top:14px"><input type="checkbox" id="rm">จดจำการเข้าสู่ระบบ</label><p class="err" id="err" role="alert"></p>
 <button class="btn w">เข้าสู่ระบบ</button><a href="#" class="lk" id="fg">ลืมรหัสผ่าน?</a></form></div></div>
-<div id="app"><aside><b>🍗 Khao Niao Gai Yang Team</b><nav id="nav"></nav></aside><div class="top"><span id="who"></span><button class="btn s o" id="out">ออกจากระบบ</button></div><main id="v"></main></div>
+<div id="app"><aside><b>🍗 Khao Niao Gai Yang Team</b><nav id="nav"></nav></aside><div class="top"><span id="who"></span><button class="btn s o" id="cpw">เปลี่ยนรหัสผ่าน</button><button class="btn s o" id="out">ออกจากระบบ</button></div><main id="v"></main></div>
 <dialog id="dlg"><form id="df" method="dialog"></form></dialog>
 <script>
 const $=s=>document.querySelector(s),E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),D=s=>s?String(s).slice(0,10):'-',C=i=>'EMP'+String(i).padStart(3,'0'),M=n=>Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -55,6 +55,11 @@ $('#fg').onclick=e=>{e.preventDefault();$('#err').textContent='กรุณา�
 $('#lf').onsubmit=async e=>{e.preventDefault();$('#err').textContent='';
  try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('#u').value.trim(),password:$('#p').value})}),j=await r.json();
   if(!r.ok)throw new Error(j.error);(($('#rm').checked?localStorage:sessionStorage).t=j.token);T=j.token;start()}catch(x){$('#err').textContent=x.message}};
+$('#cpw').onclick=()=>{$('#df').innerHTML=`<h3>เปลี่ยนรหัสผ่าน</h3><label>รหัสผ่านปัจจุบัน<input id="cp0" type="password" autocomplete="current-password"></label><label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)<input id="cp1" type="password" autocomplete="new-password"></label><label>ยืนยันรหัสผ่านใหม่<input id="cp2" type="password" autocomplete="new-password"></label><p class="err" id="cpe"></p><div class="row"><button type="button" class="btn" id="cps">บันทึก</button><button class="btn o" value="x">ยกเลิก</button></div>`;
+ $('#cps').onclick=async()=>{const e=$('#cpe');e.style.color='';e.textContent='';
+  if($('#cp1').value!==$('#cp2').value)return e.textContent='ยืนยันรหัสผ่านไม่ตรงกัน';
+  try{await api('/change-password',{m:'POST',b:{current_password:$('#cp0').value,new_password:$('#cp1').value}});e.style.color='#12805c';e.textContent='เปลี่ยนรหัสผ่านเรียบร้อยแล้ว';$('#cps').disabled=true;setTimeout(()=>$('#dlg').close(),1200)}catch(x){e.textContent=x.message}};
+ $('#dlg').showModal()};
 $('#out').onclick=out;
 const TABS={hr:[['dash','🏠 หน้าหลัก',vDash],['emp','👥 ข้อมูลพนักงาน',vEmp],['att','🗓 ขาด ลา มาสาย',()=>vRec(['absent','leave','late'],'บันทึกขาด ลา มาสาย')],['ot','⏱ OT',()=>vRec(['ot'],'บันทึกและสรุป OT')],['pay','💰 เงินเดือน',vPay],['org','🏢 แผนก/ตำแหน่ง',vOrg],['req','🔁 เปลี่ยนตำแหน่ง/แผนก',vReq],['res','🚪 ลาออก/พ้นสภาพ',vRes],['cal','📅 ปฏิทิน',vCal],['rep','📊 รายงาน',vRep],['bak','💾 สำรองข้อมูล',vBak]],
  manager:[['dash','🏠 หน้าหลัก',vDash],['req','✅ รออนุมัติ',vReq],['cal','📅 ปฏิทิน',vCal],['rep','📊 ตรวจสอบรายงาน',vRep]],employee:[['me','👤 ข้อมูลส่วนตัว',vMe],['mrec','🗓 ขาด ลา มาสาย',()=>vMyRec(['absent','leave','late'],'ขาด ลา มาสายของฉัน')],['mot','⏱ OT ของฉัน',()=>vMyRec(['ot'],'OT ของฉัน')],['mpay','💰 เงินเดือนของฉัน',vMyPay],['cal','📅 ปฏิทิน',vCal]]};
